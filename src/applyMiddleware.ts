@@ -67,6 +67,16 @@ export default function applyMiddleware(
       dispatch: (action, ...args) => dispatch(action, ...args)
     }
     const chain = middlewares.map(middleware => middleware(middlewareAPI))
+    /**
+     * 通过compose函数，将多个扁平的中间件嵌套处理，从后往前执行，前一个函数的返回值作为下一个函数的入参。
+     * Middware的类型如下: (middlewareAPI)=> (next) => (action) => unknown
+     * 1. middlewareAPI：作为中间件的上下文，包含dispatch和getState，允许插件内部获取state和发布变更。
+     * 2. next: 执行下一个中间件的入口。由当前中间件确定何时执行下一个中间件。最后一个next就是 store.dispatch 方法。
+     * 3. action: 本次的变更。前置的中间件传入。
+     * 
+     * compose方法执行的时候是从右往左执行，然后将前一个中间件的返回值作为后一个中间件的next参数。
+     * 所以最终执行中间内容的时候，类似于“洋葱模型”，先从外到内，然后从内到外。
+     */
     dispatch = compose<typeof dispatch>(...chain)(store.dispatch)
 
     return {
